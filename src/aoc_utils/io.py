@@ -1,13 +1,16 @@
 #!/usr/bin/env python
 # coding: utf-8
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Union
 
-from .constants import CONFIG_DIR
+from .constants import SESSION_COOKIE_FILE
 
 
-def read(file: Path, encoding: str = "utf-8") -> str:
+def read(file: Union[str, Path], encoding: str = "utf-8") -> str:
     """Read the contents of a file."""
+    if not isinstance(file, Path):
+        file = Path(file)
+
     if not file.exists():
         raise FileNotFoundError(f"File does not exist: {file}")
 
@@ -16,24 +19,35 @@ def read(file: Path, encoding: str = "utf-8") -> str:
 
 
 def write(
-    text: str, file: Path, encoding: str = "utf-8", exist_ok: bool = True
+    text: str,
+    file: Union[str, Path],
+    mode: str = "w",
+    encoding: str = "utf-8",
+    exist_ok: bool = True,
 ) -> None:
     """Write tect to a (plaintext) file."""
-    if file.exists() and not exist_ok:
+    if not isinstance(file, Path):
+        file = Path(file)
+
+    if file.exists() and not mode == "a" and not exist_ok:
         raise FileExistsError(
             f"File already exists: {file}. Use `exist_ok=True` to overwrite the existing file."
         )
 
-    with open(file, "w", encoding=encoding) as fh:
+    with open(file, mode, encoding=encoding) as fh:
         fh.write(text)
 
 
-def get_session_cookie() -> Dict[str, str]:
+def get_session_cookie(
+    session_cookie_file: Union[str, Path] = SESSION_COOKIE_FILE
+) -> Dict[str, str]:
     """Get the session cookie from the config directory."""
-    config_file = CONFIG_DIR / "session_cookie"
-    if not config_file.is_file():
+    if not isinstance(session_cookie_file, Path):
+        session_cookie_file = Path(session_cookie_file)
+
+    if not session_cookie_file.is_file():
         raise ValueError(
-            f"Session cookie does not exist: {config_file}. Please run `aocli init SESSION_COOKIE`."
+            f"Session cookie does not exist: {session_cookie_file}. Please run `aocli init SESSION_COOKIE`."
         )
 
-    return {"session": read(config_file)}
+    return {"session": read(session_cookie_file)}
