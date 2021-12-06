@@ -39,15 +39,18 @@ def write(
 
 
 def get_session_cookie(
-    session_cookie_file: Union[str, Path] = SESSION_COOKIE_FILE
+    session_cookie_file: Union[str, Path] = SESSION_COOKIE_FILE,
+    raise_on_missing: bool = True,
 ) -> Dict[str, str]:
     """Get the session cookie from the config directory."""
     if not isinstance(session_cookie_file, Path):
         session_cookie_file = Path(session_cookie_file)
 
     if not session_cookie_file.is_file():
-        raise ValueError(
-            f"Session cookie does not exist: {session_cookie_file}. Please run `aocli init SESSION_COOKIE`."
-        )
+        if raise_on_missing:
+            raise ValueError(
+                f"Session cookie does not exist: {session_cookie_file}. Please run `aocli init SESSION_COOKIE`."
+            )
+        return {}
 
     return {"session": read(session_cookie_file)}

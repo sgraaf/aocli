@@ -1,12 +1,16 @@
 #!/usr/bin/env python
 # coding: utf-8
+import re
 from datetime import datetime
 from pathlib import Path
 
-from requests import Session
-
 DEFAULT_DAY = datetime.now().day
 DEFAULT_YEAR = datetime.now().year
+
+YEAR_START = 2015
+YEAR_END = DEFAULT_YEAR if datetime.now().month == 12 else DEFAULT_YEAR - 1
+DAY_START = 1
+DAY_END = 25
 
 CONFIG_DIR = Path.home() / ".config" / "aoc_utils"
 if not CONFIG_DIR.is_dir():
@@ -14,6 +18,7 @@ if not CONFIG_DIR.is_dir():
 SESSION_COOKIE_FILE = CONFIG_DIR / "session_cookie"
 
 URL_TEMPLATE = "https://adventofcode.com/{year}/day/{day}"
+URL_PATTERN = re.compile(r"https://adventofcode.com/(\d+)/day/(\d+)")
 
 SOLUTION_TEMPLATE = """#!/usr/bin/env python
 # coding: utf-8
@@ -32,8 +37,8 @@ print("--- Part Two ---")
 """
 
 CORRECT_STR_START = "That's the right answer"
+CORRECT_STR_SUFFIX = " [Continue to Part Two]"
 INCORRECT_STR_START = "That's not the right answer"
+INCORRECT_STR_SUFFIX_TEMPLATE = " (You guessed {answer}.) [Return to Day {day}]"
 WAIT_STR_START = "You gave an answer too recently"
-
-SESSION = Session()
-SESSION.headers.update({"User-Agent": f"aoc_utils/0.1.0"})
+WAIT_STR_SUFFIX_TEMPLATE = " [Return to Day {day}]"

@@ -1,35 +1,61 @@
 #!/usr/bin/env python
 # coding: utf-8
 from pathlib import Path
+from requests.exceptions import HTTPError
 
 import typer
 from lxml import html
 
+from .console import console
 from .constants import (
     CONFIG_DIR,
     CORRECT_STR_START,
+    CORRECT_STR_SUFFIX,
     DEFAULT_DAY,
     DEFAULT_YEAR,
     INCORRECT_STR_START,
-    SESSION,
+    INCORRECT_STR_SUFFIX_TEMPLATE,
     SESSION_COOKIE_FILE,
     SOLUTION_TEMPLATE,
     URL_TEMPLATE,
     WAIT_STR_START,
+    WAIT_STR_SUFFIX_TEMPLATE,
 )
 from .io import get_session_cookie, write
+from .session import session
 
-app = typer.Typer()
+
+def raise_for_session_cookie():
+    """Raise an exception if the session cookie is not set."""
+    if session.cookies.get("session") is None:
+        console.print(
+            f"Session cookie is not set. Please run `aocli init SESSION_COOKIE`."
+        )
+        raise typer.Exit(code=1)
+
+
+app = typer.Typer(
+    name="Advent of Code (AoC) CLI",
+    no_args_is_help=True,
+    help="Command-Line Interface (CLI) for Advent of Code (AoC). Supports fetching of input data and submission of answers.",
+    short_help="CLI for Advent of Code (AoC)",
+    add_completion=False,
+)
 
 
 @app.command()
 def init(session_cookie: str) -> None:
     """Initialize the AoC session cookie."""
-    if not CONFIG_DIR.is_dir():
-        CONFIG_DIR.mkdir(parents=True)
+    if not len(session_cookie) == 96:
+        console.print(
+            "The session cookie must be 96 characters long. Please provide a valid session cookie."
+        )
+        raise typer.Exit(code=1)
+    # make config directory if it doesn't exist yet
+    CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+    # write the session cookie to file in the config directory
     write(session_cookie, SESSION_COOKIE_FILE)
-    SESSION.cookies.update({"session": session_cookie})
-    typer.echo(f"Successfully initialized session cookie. ✨ 🍰 ✨")
+    console.print(f"Successfully initialized session cookie. ✨ 🍪 ✨")
 
 
 @app.command()
@@ -40,59 +66,76 @@ def fetch(
     append_to_readme: bool = True,
 ) -> None:
     """Fetch the input (including test) data for the given day and create a barebones solution file."""
-    # get the url
-    url = URL_TEMPLATE.format(day=day, year=year)
-    r = SESSION.get(url)
-    r.raise_for_status()
+    raise_for_session_cookie()
 
-    # parse the html
-    tree = html.fromstring(r.content)
+    with console.status(
+        f"Fetching input data for day {day} of year {year}..."
+    ) as status:
+        # get the url
+        url = URL_TEMPLATE.format(day=day, year=year)
+        try:
+            r = session.get(url, raise_for_status=True)
+        except ValueError as e:
+            console.print(e)
+            raise typer.Exit(code=1)
+        except HTTPError as e:
+            console.print(e)
+            raise typer.Exit(code=1)
 
-    # get relevant data from the html
-    day_name = tree.findtext(".//h2")
-    test_inputs = [
-        el.text for el in tree.iterfind(".//pre/code") if el.text == el.text_content()
-    ]
+        # parse the html
+        tree = html.fromstring(r.content)
 
-    # make directory
-    day_dir = Path(f"day{day:02d}")
-    if day_dir.is_dir() and next(day_dir.iterdir(), None) is not None and not force:
-        typer.echo(
-            f"Directory {day_dir} already exists and is non-empty. Use `--force` to overwrite."
-        )
-        raise typer.Exit()
-    day_dir.mkdir(exist_ok=True)
+        # get relevant data from the html
+        day_name = tree.findtext(".//h2")
+        test_inputs = [
+            el.text
+            for el in tree.iterfind(".//pre/code")
+            if el.text == el.text_content()
+        ]
 
-    # update README
-    if append_to_readme:
-        readme_file = Path("README.md")
-        if not readme_file.is_file():
-            typer.echo(
-                f"Could not find file {readme_file}. Use `--no-append_to_readme` to skip this step."
+        # make directory
+        day_dir = Path(f"day{day:02d}")
+        if day_dir.is_dir() and next(day_dir.iterdir(), None) is not None and not force:
+            console.print(
+                f"Directory {day_dir} already exists and is non-empty. Use `--force` to overwrite."
             )
             raise typer.Exit()
-        write(
-            f"* [{day_name.removeprefix('--- ').removesuffix(' ---')}](./{day_dir.name}) \n",
-            readme_file,
-            mode="a",
-        )
+        day_dir.mkdir(exist_ok=True)
 
-    # create solution file
-    write(SOLUTION_TEMPLATE.format(day_name=day_name), day_dir / "solution.py")
+        # update README
+        if append_to_readme:
+            readme_file = Path("README.md")
+            if not readme_file.is_file():
+                console.print(
+                    f"Could not find file {readme_file}. Use `--no-append_to_readme` to skip this step."
+                )
+                raise typer.Exit()
+            write(
+                f"* [{day_name.removeprefix('--- ').removesuffix(' ---')}](./{day_dir.name}) \n",
+                readme_file,
+                mode="a",
+            )
 
-    # write test inputs to disk
-    for i, test_input in enumerate(test_inputs):
-        write(test_input, day_dir / f"test_{i:02d}.txt")
+        # create solution file
+        write(SOLUTION_TEMPLATE.format(day_name=day_name), day_dir / "solution.py")
 
-    # get the input data
-    if SESSION.cookies.get("session") is None:
-        SESSION.cookies.update(get_session_cookie())
-    r_data = SESSION.get(url + "/input")
-    r_data.raise_for_status()
-    write(r_data.text, day_dir / "input.txt")
+        # write test inputs to disk
+        for i, test_input in enumerate(test_inputs):
+            write(test_input, day_dir / f"test_{i:02d}.txt")
 
-    typer.echo("Done fetching.")
-    typer.echo(f"Go to part 1: {url}")
+        # get the input data
+        try:
+            r_data = session.get(url + "/input", raise_for_status=True)
+        except ValueError as e:
+            console.print(e)
+            raise typer.Exit(code=1)
+        except HTTPError as e:
+            console.print(e)
+            raise typer.Exit(code=1)
+        write(r_data.text, day_dir / "input.txt")
+
+        console.print("Done fetching. 📩")
+        console.print(f"Go to part 1: {url}")
 
 
 @app.command()
@@ -100,29 +143,51 @@ def submit(
     answer: str, part: int, day: int = DEFAULT_DAY, year: int = DEFAULT_YEAR
 ) -> None:
     """Submit an answer."""
-    if SESSION.cookies.get("session") is None:
-        SESSION.cookies.update(get_session_cookie())
+    raise_for_session_cookie()
 
-    r = SESSION.post(
-        url=URL_TEMPLATE.format(day=day, year=year) + "/answer",
-        data={"level": str(part), "answer": answer},
-    )
-    r.raise_for_status()
+    with console.status(
+        f"Submitting answer for part {part} of day {day} of year {year}..."
+    ) as status:
+        # validate part
+        if not 1 <= part <= 2:
+            console.print(f"Invalid part: {part}. Must be either 1 or 2.")
+            typer.Exit(code=1)
 
-    # parse the html
-    tree = html.fromstring(r.content)
+        try:
+            r = session.post(
+                url=URL_TEMPLATE.format(day=day, year=year) + "/answer",
+                data={"level": str(part), "answer": answer},
+                raise_for_status=True,
+            )
+        except ValueError as e:
+            console.print(e)
+            raise typer.Exit(code=1)
+        except HTTPError as e:
+            console.print(e)
+            raise typer.Exit(code=1)
 
-    # get the feedback message
-    msg = tree.find(".//article/p").text_content()
+        # parse the html
+        tree = html.fromstring(r.content)
 
-    if msg.startswith(CORRECT_STR_START):
-        typer.echo(msg.removesuffix(" [Continue to Part Two]"))
-        if part == 1:
-            typer.echo(f"Go to part 2: {URL_TEMPLATE.format(day=day, year=year)}#part2")
-    elif msg.startswith(INCORRECT_STR_START):
-        typer.echo(msg.removesuffix(f" (You guessed {answer}.) [Return to Day {day}]"))
-    elif msg.startswith(WAIT_STR_START):
-        typer.echo(msg)
+        # get the feedback message
+        msg = " ".join(tree.find(".//article/p").text_content().strip().split())
+
+        if msg.startswith(CORRECT_STR_START):
+            console.print(
+                f'[bold green]Correct! 🌟:[/bold green] "{msg.removesuffix(CORRECT_STR_SUFFIX)}"'
+            )
+            if part == 1:
+                console.print(
+                    f"Continue to part 2: {URL_TEMPLATE.format(day=day, year=year)}#part2"
+                )
+        elif msg.startswith(INCORRECT_STR_START):
+            console.print(
+                f'[bold red]Incorrect! ❌:[/bold red] "{msg.removesuffix(INCORRECT_STR_SUFFIX_TEMPLATE.format(answer=answer, day=day))}"'
+            )
+        elif msg.startswith(WAIT_STR_START):
+            console.print(
+                f'[bold blue]Wait a minute! ⏱️:[/bold blue] "{msg.removesuffix(WAIT_STR_SUFFIX_TEMPLATE.format(day=day))}"'
+            )
 
 
 if __name__ == "__main__":
