@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-# coding: utf-8
 import re
 from datetime import datetime
 from pathlib import Path
@@ -20,9 +18,7 @@ SESSION_COOKIE_FILE = CONFIG_DIR / "session_cookie"
 URL_TEMPLATE = "https://adventofcode.com/{year}/day/{day}"
 URL_PATTERN = re.compile(r"https://adventofcode.com/(\d+)/day/(\d+)")
 
-SOLUTION_TEMPLATE = """#!/usr/bin/env python
-# coding: utf-8
-from aoc_utils import read
+SOLUTION_TEMPLATE = """from aoc_utils import read
 
 print("{day_name}")
 

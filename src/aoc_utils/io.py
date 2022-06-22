@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-# coding: utf-8
 from pathlib import Path
 from typing import Dict, Union
 
@@ -14,7 +12,7 @@ def read(file: Union[str, Path], encoding: str = "utf-8") -> str:
     if not file.exists():
         raise FileNotFoundError(f"File does not exist: {file}")
 
-    with open(file, "r", encoding=encoding) as fh:
+    with open(file, encoding=encoding) as fh:
         return fh.read()
 
 

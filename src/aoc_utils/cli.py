@@ -1,10 +1,8 @@
-#!/usr/bin/env python
-# coding: utf-8
 from pathlib import Path
-from requests.exceptions import HTTPError
 
 import typer
 from lxml import html
+from requests.exceptions import HTTPError
 
 from .console import console
 from .constants import (
@@ -21,7 +19,7 @@ from .constants import (
     WAIT_STR_START,
     WAIT_STR_SUFFIX_TEMPLATE,
 )
-from .io import get_session_cookie, write
+from .io import write
 from .session import session
 
 
@@ -29,7 +27,7 @@ def raise_for_session_cookie():
     """Raise an exception if the session cookie is not set."""
     if session.cookies.get("session") is None:
         console.print(
-            f"Session cookie is not set. Please run `aocli init SESSION_COOKIE`."
+            "Session cookie is not set. Please run `aocli init SESSION_COOKIE`."
         )
         raise typer.Exit(code=1)
 
@@ -46,16 +44,11 @@ app = typer.Typer(
 @app.command()
 def init(session_cookie: str) -> None:
     """Initialize the AoC session cookie."""
-    if not len(session_cookie) == 96:
-        console.print(
-            "The session cookie must be 96 characters long. Please provide a valid session cookie."
-        )
-        raise typer.Exit(code=1)
     # make config directory if it doesn't exist yet
     CONFIG_DIR.mkdir(parents=True, exist_ok=True)
     # write the session cookie to file in the config directory
     write(session_cookie, SESSION_COOKIE_FILE)
-    console.print(f"Successfully initialized session cookie. ✨ 🍪 ✨")
+    console.print("Successfully initialized session cookie. ✨ 🍪 ✨")
 
 
 @app.command()
@@ -68,9 +61,7 @@ def fetch(
     """Fetch the input (including test) data for the given day and create a barebones solution file."""
     raise_for_session_cookie()
 
-    with console.status(
-        f"Fetching input data for day {day} of year {year}..."
-    ) as status:
+    with console.status(f"Fetching input data for day {day} of year {year}..."):
         # get the url
         url = URL_TEMPLATE.format(day=day, year=year)
         try:
@@ -147,7 +138,7 @@ def submit(
 
     with console.status(
         f"Submitting answer for part {part} of day {day} of year {year}..."
-    ) as status:
+    ):
         # validate part
         if not 1 <= part <= 2:
             console.print(f"Invalid part: {part}. Must be either 1 or 2.")
