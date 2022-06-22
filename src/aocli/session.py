@@ -18,7 +18,7 @@ from .io import get_session_cookie
 class AoCSession(Session):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        self.headers.update({"User-Agent": f"aoc_utils/{__version__}"})
+        self.headers.update({"User-Agent": f"aocli/{__version__}"})
         self.cookies.update(get_session_cookie(raise_on_missing=False))
 
     def request(self, method: str, url: str, raise_for_status: bool = False, *args, **kwargs) -> Response:  # type: ignore

@@ -3,7 +3,7 @@ requires = ["flit_core >=3.2,<4"]
 build-backend = "flit_core.buildapi"
 
 [project]
-name = "aoc_utils"
+name = "aocli"
 readme = "README.md"
 requires-python = ">3.9"
 license = {file = "LICENSE"}
@@ -41,10 +41,10 @@ dev = [
 ]
 
 [project.urls]
-Home = "https://github.com/sgraaf/advent-of-code-utils"
+Home = "https://github.com/sgraaf/aocli"
 
 [project.scripts]
-aocli = "aoc_utils.cli:app"
+aocli = "aocli.cli:app"
 
 [tool.isort]
 profile = "black"
