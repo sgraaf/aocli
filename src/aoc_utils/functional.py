@@ -1,21 +1,21 @@
 import heapq
 from collections import defaultdict
-from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Union
+from typing import Any, Optional, Sequence, Union
 
 inf = float("inf")
 
 
-def find_dimensions_2d(grid: Sequence[Sequence[Any]]) -> Tuple[int, int]:
+def find_dimensions_2d(grid: Sequence[Sequence[Any]]) -> tuple[int, int]:
     return len(grid), max(len(item) for item in grid)
 
 
 def find_neighbouring_indices_2d(
     i: int,
     j: int,
-    bounds_i: Optional[Tuple[int, int]] = None,
-    bounds_j: Optional[Tuple[int, int]] = None,
+    bounds_i: Optional[tuple[int, int]] = None,
+    bounds_j: Optional[tuple[int, int]] = None,
     include_diagonals: bool = False,
-) -> List[Tuple[int, int]]:
+) -> list[tuple[int, int]]:
     all_bounds = (bounds_i, bounds_j)
     if any(all_bounds) and not all(
         all_bounds
@@ -40,7 +40,7 @@ def find_neighbouring_indices_2d(
     return neighbouring_indices
 
 
-def find_dimensions_3d(grid: Sequence[Sequence[Sequence[Any]]]) -> Tuple[int, int, int]:
+def find_dimensions_3d(grid: Sequence[Sequence[Sequence[Any]]]) -> tuple[int, int, int]:
     return (
         len(grid),
         max(len(item) for item in grid),
@@ -52,11 +52,11 @@ def find_neighbouring_indices_3d(
     i: int,
     j: int,
     k: int,
-    bounds_i: Optional[Tuple[int, int]] = None,
-    bounds_j: Optional[Tuple[int, int]] = None,
-    bounds_k: Optional[Tuple[int, int]] = None,
+    bounds_i: Optional[tuple[int, int]] = None,
+    bounds_j: Optional[tuple[int, int]] = None,
+    bounds_k: Optional[tuple[int, int]] = None,
     include_diagonals: bool = False,
-) -> List[Tuple[int, int, int]]:
+) -> list[tuple[int, int, int]]:
     all_bounds = (bounds_i, bounds_j, bounds_k)
     if any(all_bounds) and not all(
         all_bounds
@@ -94,7 +94,7 @@ def find_neighbouring_indices_3d(
 
 def find_dimensions_4d(
     grid: Sequence[Sequence[Sequence[Sequence[Any]]]],
-) -> Tuple[int, int, int, int]:
+) -> tuple[int, int, int, int]:
     return (
         len(grid),
         max(len(item) for item in grid),
@@ -113,12 +113,12 @@ def find_neighbouring_indices_4d(
     j: int,
     k: int,
     l: int,
-    bounds_i: Optional[Tuple[int, int]] = None,
-    bounds_j: Optional[Tuple[int, int]] = None,
-    bounds_k: Optional[Tuple[int, int]] = None,
-    bounds_l: Optional[Tuple[int, int]] = None,
+    bounds_i: Optional[tuple[int, int]] = None,
+    bounds_j: Optional[tuple[int, int]] = None,
+    bounds_k: Optional[tuple[int, int]] = None,
+    bounds_l: Optional[tuple[int, int]] = None,
     include_diagonals: bool = False,
-) -> List[Tuple[int, int, int, int]]:
+) -> list[tuple[int, int, int, int]]:
     all_bounds = (bounds_i, bounds_j, bounds_k, bounds_l)
     if any(all_bounds) and not all(
         all_bounds
@@ -165,24 +165,24 @@ def find_neighbouring_indices_4d(
 
 class Graph:
     def __init__(self) -> None:
-        self.edges: Dict[
-            Tuple[int, int], List[Tuple[Tuple[int, int], int]]
+        self.edges: dict[
+            tuple[int, int], list[tuple[tuple[int, int], int]]
         ] = defaultdict(list)
-        self.vertices: Set[Tuple[int, int]] = set()
+        self.vertices: set[tuple[int, int]] = set()
 
-    def add_edge(self, u: Tuple[int, int], v: Tuple[int, int], weight: int) -> None:
+    def add_edge(self, u: tuple[int, int], v: tuple[int, int], weight: int) -> None:
         self.edges[u].append((v, weight))
         self.vertices.add(u)
         self.vertices.add(v)
 
     def dijkstra(
-        self, source: Tuple[int, int], dest: Optional[Tuple[int, int]] = None
-    ) -> Union[float, Dict[Tuple[int, int], float]]:
-        D: Dict[Tuple[int, int], float] = {v: inf for v in self.vertices}
+        self, source: tuple[int, int], dest: Optional[tuple[int, int]] = None
+    ) -> Union[float, dict[tuple[int, int], float]]:
+        D: dict[tuple[int, int], float] = {v: inf for v in self.vertices}
         D[source] = 0
 
-        queue: List[Tuple[int, Tuple[int, int]]] = [(0, source)]
-        visited: Set[Tuple[int, int]] = set()
+        queue: list[tuple[int, tuple[int, int]]] = [(0, source)]
+        visited: set[tuple[int, int]] = set()
 
         while queue:
             (dist, v) = heapq.heappop(queue)

@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Dict, Union
+from typing import Union
 
 from .constants import SESSION_COOKIE_FILE
 
@@ -39,7 +39,7 @@ def write(
 def get_session_cookie(
     session_cookie_file: Union[str, Path] = SESSION_COOKIE_FILE,
     raise_on_missing: bool = True,
-) -> Dict[str, str]:
+) -> dict[str, str]:
     """Get the session cookie from the config directory."""
     if not isinstance(session_cookie_file, Path):
         session_cookie_file = Path(session_cookie_file)
