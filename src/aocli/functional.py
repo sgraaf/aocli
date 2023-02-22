@@ -1,6 +1,6 @@
 import heapq
 from collections import defaultdict
-from typing import Any, Optional, Sequence, Union
+from typing import Any, Hashable, Optional, Sequence, Union
 
 inf = float("inf")
 
@@ -165,24 +165,25 @@ def find_neighbouring_indices_4d(
 
 class Graph:
     def __init__(self) -> None:
-        self.edges: dict[
-            tuple[int, int], list[tuple[tuple[int, int], int]]
-        ] = defaultdict(list)
-        self.vertices: set[tuple[int, int]] = set()
+        self.vertices: dict[Hashable, Optional[int]] = defaultdict(lambda: None)
+        self.edges: dict[Hashable, list[tuple[Hashable, int]]] = defaultdict(list)
 
-    def add_edge(self, u: tuple[int, int], v: tuple[int, int], weight: int) -> None:
+    def add_vertex(self, v: Hashable, weight: Optional[int] = None) -> None:
+        self.vertices[v] = weight
+
+    def add_edge(self, u: Hashable, v: Hashable, weight: int) -> None:
         self.edges[u].append((v, weight))
-        self.vertices.add(u)
-        self.vertices.add(v)
+        self.vertices[u]
+        self.vertices[v]
 
     def dijkstra(
-        self, source: tuple[int, int], dest: Optional[tuple[int, int]] = None
-    ) -> Union[float, dict[tuple[int, int], float]]:
-        D: dict[tuple[int, int], float] = {v: inf for v in self.vertices}
+        self, source: Hashable, dest: Optional[Hashable] = None
+    ) -> Union[float, dict[Hashable, float]]:
+        D: dict[Hashable, float] = {v: inf for v in self.vertices}
         D[source] = 0
 
-        queue: list[tuple[int, tuple[int, int]]] = [(0, source)]
-        visited: set[tuple[int, int]] = set()
+        queue: list[tuple[int, Hashable]] = [(0, source)]
+        visited: set[Hashable] = set()
 
         while queue:
             (dist, v) = heapq.heappop(queue)
