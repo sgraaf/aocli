@@ -1,6 +1,7 @@
 import heapq
 from collections import defaultdict
-from typing import Any, Hashable, Optional, Sequence, Union
+from collections.abc import Hashable, Sequence
+from typing import Any, Optional, Union
 
 inf = float("inf")
 
