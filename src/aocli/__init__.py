@@ -1,4 +1,5 @@
 """A python package and CLI providing various utility functions for Advent of Code puzzles."""
+
 from .data import to_lines, to_numbers
 from .functional import (
     Graph,
